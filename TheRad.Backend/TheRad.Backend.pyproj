@@ -1,0 +1,121 @@
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>63512750-fdcd-47f1-a4f0-6ddc4bec7323</ProjectGuid>
+    <ProjectHome>.</ProjectHome>
+    <StartupFile>main.py</StartupFile>
+    <SearchPath>
+    </SearchPath>
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <Name>TheRad.Backend</Name>
+    <RootNamespace>TheRad.Backend</RootNamespace>
+    <InterpreterId>MSBuild|env_stable|$(MSBuildProjectFullPath)</InterpreterId>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="app\auth\admin_access.py" />
+    <Compile Include="app\auth\__init__.py" />
+    <Compile Include="app\config\settings.py" />
+    <Compile Include="app\config\__init__.py" />
+    <Compile Include="app\database\base.py" />
+    <Compile Include="app\database\connection.py" />
+    <Compile Include="app\database\__init__.py" />
+    <Compile Include="app\models\chat.py" />
+    <Compile Include="app\models\lesson.py" />
+    <Compile Include="app\routes\admin.py" />
+    <Compile Include="app\routes\admin_lesson.py" />
+    <Compile Include="app\routes\auth.py" />
+    <Compile Include="app\routes\chat.py" />
+    <Compile Include="app\routes\lesson.py" />
+    <Compile Include="app\routes\user.py" />
+    <Compile Include="app\schemas\auth.py" />
+    <Compile Include="app\schemas\chat.py" />
+    <Compile Include="app\schemas\lesson.py" />
+    <Compile Include="app\schemas\quiz.py" />
+    <Compile Include="app\services\auth.py" />
+    <Compile Include="app\services\chat.py" />
+    <Compile Include="app\services\lesson.py" />
+    <Compile Include="app\services\sms.py" />
+    <Compile Include="app\services\user.py" />
+    <Compile Include="app\services\user_service.py" />
+    <Compile Include="app\services\video.py" />
+    <Compile Include="app\utils\__init__.py" />
+    <Compile Include="main.py" />
+    <Compile Include="app\models\__init__.py" />
+    <Compile Include="app\routes\health.py" />
+    <Compile Include="app\models\progress.py" />
+    <Compile Include="app\models\quiz.py" />
+    <Compile Include="app\models\user.py" />
+    <Compile Include="app\models\video.py" />
+    <Compile Include="app\routes\progress.py" />
+    <Compile Include="app\routes\videos.py" />
+    <Compile Include="app\routes\__init__.py" />
+    <Compile Include="app\schemas\progress.py" />
+    <Compile Include="app\schemas\user.py" />
+    <Compile Include="app\schemas\video.py" />
+    <Compile Include="app\auth\dependencies.py" />
+    <Compile Include="app\schemas\__init__.py" />
+    <Compile Include="app\services\progress.py" />
+    <Compile Include="app\services\__init__.py" />
+    <Compile Include="app\storage\base.py" />
+    <Compile Include="app\storage\__init__.py" />
+    <Compile Include="middleware\__init__.py" />
+    <Compile Include="TheRad.Backend.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="app\" />
+    <Folder Include="app\config\" />
+    <Folder Include="app\database\" />
+    <Folder Include="app\models\" />
+    <Folder Include="app\routes\" />
+    <Folder Include="app\schemas\" />
+    <Folder Include="app\services\" />
+    <Folder Include="app\storage\" />
+    <Folder Include="app\auth\" />
+    <Folder Include="app\utils\" />
+    <Folder Include="middleware\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include=".env" />
+    <Content Include="docker-compose.yml" />
+    <Content Include="Dockerfile" />
+  </ItemGroup>
+  <ItemGroup>
+    <Interpreter Include="env\">
+      <Id>env</Id>
+      <Version>3.14</Version>
+      <Description>env (Python 3.14.5)</Description>
+      <InterpreterPath>Scripts\python.exe</InterpreterPath>
+      <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
+      <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
+      <Architecture>X64</Architecture>
+    </Interpreter>
+    <Interpreter Include="env_stable\">
+      <Id>env_stable</Id>
+      <Version>3.12</Version>
+      <Description>env_stable (Python 3.12)</Description>
+      <InterpreterPath>Scripts\python.exe</InterpreterPath>
+      <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
+      <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
+      <Architecture>X64</Architecture>
+    </Interpreter>
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
+  <!-- Uncomment the CoreCompile target to enable the Build command in
+       Visual Studio and specify your pre- and post-build commands in
+       the BeforeBuild and AfterBuild targets below. -->
+  <!--<Target Name="CoreCompile" />-->
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+</Project>

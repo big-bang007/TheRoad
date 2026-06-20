@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./storage_mount:/workspace/storage_mount
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:secret_password@db:5432/the_road_db
+      - JWT_SECRET_KEY=your_super_secure_platform_shared_secret_key_change_me
+      - ENVIRONMENT=development
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=secret_password
+      - POSTGRES_DB=the_road_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d the_road_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
