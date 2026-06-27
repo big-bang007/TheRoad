@@ -10,11 +10,11 @@ import HyggeLogo from './HyggeLogo';
 export default function OnboardingLayout({ children, id, onBack }) {
   return (
     <div 
-      className="relative flex flex-col justify-between w-full min-h-screen p-6 md:p-8 bg-gradient-to-b from-[#415354] via-[#546E6D] to-[#718E8C] text-white"
+       className="relative flex flex-col justify-between w-full min-h-screen p-6 md:p-8 bg-[#88aba8] text-white"
       id={id || "onboarding-layout"}
     >
       {/* Soft light radial background accent for premium feel */}
-      <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-80 h-80 bg-[#aed3cc]/5 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-80 h-80 bg-[#88aba8]/5 rounded-full blur-[100px] pointer-events-none" />
 
       {/* Header Area with Logo */}
       <header className="z-10 flex flex-col items-center mt-6" id="onboarding-header">

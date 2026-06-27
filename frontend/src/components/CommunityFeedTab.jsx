@@ -6,6 +6,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Send, Users, Shield, BookOpen, Sparkles, Paperclip, X, Trash2 } from 'lucide-react';
+import UserProfileModal from './UserProfileModal';
 
 export default function CommunityFeedTab({ user, isAdmin = false }) {
   const [messages, setMessages] = useState([]);
@@ -13,6 +14,8 @@ export default function CommunityFeedTab({ user, isAdmin = false }) {
   const [isSegmentMode, setIsSegmentMode] = useState(false);
   const [connected, setConnected] = useState(false);
   
+  const [selectedUser, setSelectedUser] = useState(null);
+
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
@@ -197,7 +200,7 @@ export default function CommunityFeedTab({ user, isAdmin = false }) {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-120px)] w-full bg-[#1e2a2b] rounded-3xl overflow-hidden border border-white/10 relative shadow-2xl">
+    <div className="flex flex-col h-[calc(100vh-120px)] w-full bg-[#88aba8] rounded-3xl overflow-hidden border border-white/10 relative shadow-2xl">
       
       {/* HEADER */}
       <div className="shrink-0 p-4 bg-[#253334] flex justify-between items-center border-b border-white/10 shadow-sm relative z-20">
@@ -257,10 +260,19 @@ export default function CommunityFeedTab({ user, isAdmin = false }) {
                 className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[85%] ${isMe ? 'ml-auto' : 'mr-auto'}`}
               >
                 {!isMe && (
-                  <span className="text-xs text-white/50 mb-1 ml-1 flex items-center gap-1 font-medium">
+                  <button 
+                    onClick={() => setSelectedUser({
+                      name: msg.sender_name,
+                      role: msg.sender_name === 'Admin' ? 'Community Admin' : 'Community Member',
+                      level: Math.floor(Math.random() * 5) + 1,
+                      streak: Math.floor(Math.random() * 10) + 1,
+                      cozyScore: Math.floor(Math.random() * 100)
+                    })}
+                    className="text-xs text-white/50 mb-1 ml-1 flex items-center gap-1 font-medium hover:text-hygge-teal transition cursor-pointer text-left focus:outline-none"
+                  >
                     {msg.sender_name === 'Admin' && <Shield className="w-3 h-3 text-hygge-teal" />}
                     {msg.sender_name}
-                  </span>
+                  </button>
                 )}
                 
                 <div className={`p-3.5 rounded-2xl relative group ${
@@ -381,6 +393,13 @@ export default function CommunityFeedTab({ user, isAdmin = false }) {
           </button>
         </div>
       </div>
+      
+      <UserProfileModal 
+        isOpen={selectedUser !== null} 
+        onClose={() => setSelectedUser(null)} 
+        profileUser={selectedUser} 
+        userPosts={selectedUser ? messages.filter(m => m.sender_name === selectedUser.name) : []} 
+      />
     </div>
   );
 }

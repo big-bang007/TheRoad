@@ -58,8 +58,8 @@ export default function AdminExistingLessonsTab({ onEditRequest }) {
   // --- PREVIEW MODE UI ---
   if (previewLesson) {
     return (
-      <div className="flex flex-col h-full inset-0 z-50 fixed bg-[#415354] overflow-y-auto w-full md:w-[--max-w-lg] mx-auto overflow-x-hidden md:relative md:rounded-3xl">
-        <div className="sticky top-0 z-10 flex items-center gap-3 p-4 bg-[#415354]/90 backdrop-blur-md border-b border-white/10 text-white">
+      <div className="flex flex-col h-full inset-0 z-50 fixed bg-[#88aba8] overflow-y-auto w-full md:w-[--max-w-lg] mx-auto overflow-x-hidden md:relative md:rounded-3xl">
+        <div className="sticky top-0 z-10 flex items-center gap-3 y-3 px bg-[#37494a]/90 backdrop-blur-md border-b border-white/10 text-white">
           <button onClick={() => setPreviewLesson(null)} className="p-2 -ml-2 rounded-full hover:bg-white/10 transition cursor-pointer">
             <ChevronLeft className="w-6 h-6" />
           </button>

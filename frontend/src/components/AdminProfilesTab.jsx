@@ -70,8 +70,8 @@ export default function AdminProfilesTab() {
       : 'http://127.0.0.1:8000';
 
     return (
-      <div className="flex flex-col h-full inset-0 z-50 fixed bg-[#415354] overflow-y-auto w-full md:w-[--max-w-lg] mx-auto overflow-x-hidden md:relative md:rounded-3xl">
-        <div className="sticky top-0 z-10 flex items-center justify-between p-4 bg-[#415354]/90 backdrop-blur-md border-b border-white/10 text-white">
+      <div className="flex flex-col h-full inset-0 z-50 fixed bg-[#88aba8] overflow-y-auto w-full md:w-[--max-w-lg] mx-auto overflow-x-hidden md:relative md:rounded-3xl">
+          <div className="sticky top-0 z-10 flex items-center justify-between py-3 px-4 bg-[#37494a]/90 backdrop-blur-md border-b border-white/10 text-white">
            <div className="flex items-center gap-3">
              <button onClick={() => setViewingUser(null)} className="p-2 -ml-2 rounded-full hover:bg-white/10 transition cursor-pointer">
                <ChevronLeft className="w-6 h-6" />
