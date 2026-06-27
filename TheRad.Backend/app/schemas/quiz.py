@@ -24,6 +24,12 @@ class ConnectingWordsQuestion(BaseModel):
     instruction: str
     pairs: List[Dict[str, str]] = Field(..., description="List of left/right matching pairs")
 
+class SentenceFactoryItem(BaseModel):
+    id: int
+    target_sentence: str
+    word_bank: List[str]
+    correct_order: List[str]
+
 # This tells FastAPI to dynamically figure out which question schema to use based on the 'type' field!
 QuestionItem = Union[
     MultipleChoiceQuestion, 

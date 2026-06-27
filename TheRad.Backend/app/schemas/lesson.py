@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional, Any  # 1. Added Any
+from typing import List, Optional, Any, Dict  # 1. Added Any
 
 # ==========================================
 # 📤 OUTGOING RESPONSES (To Frontend)
@@ -51,3 +51,17 @@ class LessonGradeResponse(BaseModel):
     score_percentage: float
     passed: bool
     results: List[QuestionResult]
+
+class StudentSubmission(BaseModel):
+    answers: Dict[str, Any]
+
+# Response layout for Prep Tasks (Blocker)
+class PrepTaskResponse(BaseModel):
+    passed: bool
+    errors: Optional[List[Dict[str, str]]] = None
+
+# Response layout for Quizzes/Tests (Grader & Hint Guide)
+class GradeResponse(BaseModel):
+    passed: bool
+    score: float
+    hints: Optional[List[Dict[str, str]]] = None
