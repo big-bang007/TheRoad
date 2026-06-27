@@ -2,6 +2,15 @@ from sqlalchemy import String, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing import List, Optional, TYPE_CHECKING
 from app.database.base import Base
+from enum import Enum
+from sqlalchemy import Column, String, Integer, DateTime, Boolean, Enum as SQLEnum
+from app.core.database import Base
+import datetime
+
+class UserTier(str, Enum):
+    FREE = "FREE"
+    PRO = "PRO"
+    ULTRA = "ULTRA"
 
 class User(Base):
     __tablename__ = "users"
@@ -13,6 +22,9 @@ class User(Base):
     role: Mapped[str] = mapped_column(String, default="student")
     otp_code: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     name: Mapped[str] = mapped_column(String, nullable=True)
+    tier = Column(SQLEnum(UserTier), default=UserTier.FREE, nullable=False)
+    subscription_expires_at = Column(DateTime, nullable=True)
+
 
 
     # --- Missing Relationships Added Back ---
