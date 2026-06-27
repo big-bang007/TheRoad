@@ -65,7 +65,7 @@ function AppRoutes() {
   };
 
   return (
-    <div className="w-full relative min-h-screen bg-[#F4F7F6]" id="app-root-container">
+    <div className="w-full relative min-h-screen bg-[#88aba8]" id="app-root-container">
       <Routes>
         <Route path="/" element={<SplashView onStart={() => navigate('/signup')} />} />
 
