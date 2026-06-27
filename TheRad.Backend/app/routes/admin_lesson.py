@@ -2,11 +2,30 @@ import json
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
-
+from app.auth.admin_access import get_admin_user
 from app.database.connection import get_db
 from app.models.lesson import Lesson
+from app.services.excel_parser import parse_admin_lesson_excel
+import logging
 
+logger = logging.getLogger("uvicorn.error")
 router = APIRouter(tags=["Admin Panel"])
+
+@router.post("/import-excel")
+async def import_lesson_from_excel(
+    file: UploadFile = File(...),
+    #current_admin = Depends(get_admin_user)
+):
+    try:
+        # Pass the file directly to the parser
+        result = await parse_admin_lesson_excel(file)
+        return result
+    except Exception as e:
+        # ✅ THE FIX: This logs the exact Pydantic/Validation error to your VPS console
+        logger.error(f"--- DEBUG EXCEL IMPORT ERROR ---")
+        logger.exception(e) 
+        # Return the error message to the browser so you can see it
+        raise HTTPException(status_code=422, detail=str(e))
 
 # 🛡️ THE FIX: Changed path to "/lessons" to match your frontend POST request perfectly
 @router.post("/lessons", status_code=status.HTTP_201_CREATED)

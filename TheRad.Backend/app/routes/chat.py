@@ -143,10 +143,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, token: str = Qu
     safe_name = user_name if user_name else f"User {str(user_id)[-4:]}"
     
     try:
-        await manager.broadcast(json.dumps({
-            "system": True, 
-            "content": f"{safe_name} joined the sanctuary."
-        }), room_id)
+       
         
         while True:
             data = await websocket.receive_text()

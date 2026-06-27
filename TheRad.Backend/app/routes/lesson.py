@@ -2,15 +2,15 @@ import os
 import json
 import shutil
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm.attributes import flag_modified
 
 from app.models.lesson import Lesson
 from app.database.connection import get_db
-from app.schemas.quiz import LessonResponse 
-from app.schemas.lesson import LessonSubmissionRequest, LessonGradeResponse
+# NOTE: Ensure StudentSubmission, PrepTaskResponse, and GradeResponse are added to your schemas!
+from app.schemas.lesson import StudentSubmission, PrepTaskResponse, GradeResponse 
 from app.services.lesson import LessonEngine
 
 router = APIRouter(tags=["Lessons Engine"])
@@ -44,7 +44,6 @@ async def get_lessons(db: AsyncSession = Depends(get_db)):
                 try: d_data = json.loads(lesson.description_data)
                 except: d_data = {}
 
-            # Map to EXACTLY what React expects!
             formatted_lessons.append({
                 "id": lesson.id,
                 "title": lesson.title,
@@ -89,14 +88,12 @@ async def create_lesson(
         # 💾 SAVE FILE TO LOCAL DISK SYSTEM
         video_url = ""
         if video and video.filename:
-            # Clean spaces or illegal structures from file names
             safe_filename = video.filename.replace(" ", "_")
             file_path = os.path.join(UPLOAD_DIR, safe_filename)
             
             with open(file_path, "wb") as buffer:
                 shutil.copyfileobj(video.file, buffer)
             
-            # Match the application mounting path configuration
             video_url = f"/uploads/{safe_filename}"
         
         new_lesson = Lesson(
@@ -173,7 +170,6 @@ async def update_lesson(
         parsed_fields = json.loads(formFields)
         parsed_tests = json.loads(tests)
 
-        # 🛡️ ARCHITECTURAL RECOVERY: Safe guard against raw text strings coming from database columns
         current_video_data = lesson.video_data
         if isinstance(current_video_data, str):
             try:
@@ -183,7 +179,6 @@ async def update_lesson(
         if not isinstance(current_video_data, dict):
             current_video_data = {}
 
-        # 💾 PROCESS NEW FILE CAPTURE IF SENT
         if video and video.filename:
             safe_filename = video.filename.replace(" ", "_")
             file_path = os.path.join(UPLOAD_DIR, safe_filename)
@@ -209,7 +204,6 @@ async def update_lesson(
         lesson.sentence_factory_data = parsed_fields
         lesson.final_test_data = parsed_tests
 
-        # Force tracking propagation
         flag_modified(lesson, "video_data")
         flag_modified(lesson, "description_data")
         flag_modified(lesson, "preparation_task")
@@ -227,23 +221,43 @@ async def update_lesson(
         raise HTTPException(status_code=422, detail="Failed to parse JSON arrays.")
     except Exception as e:
         await db.rollback()
-        print(f"❌ DATABASE ERROR: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
+
 
 # ==========================================================
 # 2. STUDENT ROUTES (Fetching & Grading)
 # ==========================================================
 
-@router.get("/lessons/{order_number}", response_model=LessonResponse)
+@router.get("/lessons/{order_number}")
 async def fetch_lesson(order_number: int, db: AsyncSession = Depends(get_db)):
     """Fetches a complete lesson by its chronological order sequence."""
     return await LessonEngine.get_lesson_by_order(db, order_number)
 
-@router.post("/lessons/{lesson_id}/submit", response_model=LessonGradeResponse)
-async def submit_lesson(
+# 👇 NEW DYNAMIC GRADING ROUTES 
+
+@router.post("/lessons/{lesson_id}/submit-prep", response_model=PrepTaskResponse)
+async def submit_preparation_task(
     lesson_id: int, 
-    submission: LessonSubmissionRequest, 
+    submission: StudentSubmission, 
     db: AsyncSession = Depends(get_db)
 ):
-    """Submits user answers, grades dynamically via JSON engine."""
-    return await LessonEngine.grade_submission(db, lesson_id, submission)
+    """Checks prep tasks to unlock the rest of the lesson."""
+    return await LessonEngine.validate_prep_tasks(db, lesson_id, submission.answers)
+
+@router.post("/lessons/{lesson_id}/submit-quiz", response_model=GradeResponse)
+async def submit_lesson_quiz(
+    lesson_id: int, 
+    submission: StudentSubmission, 
+    db: AsyncSession = Depends(get_db)
+):
+    """Grades the standard lesson quiz."""
+    return await LessonEngine.grade_exam(db, lesson_id, submission.answers, exam_type="quiz")
+
+@router.post("/lessons/{lesson_id}/submit-test", response_model=GradeResponse)
+async def submit_final_test(
+    lesson_id: int, 
+    submission: StudentSubmission, 
+    db: AsyncSession = Depends(get_db)
+):
+    """Grades the final test before unlocking the next lesson."""
+    return await LessonEngine.grade_exam(db, lesson_id, submission.answers, exam_type="test")
