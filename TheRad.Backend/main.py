@@ -1,14 +1,16 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from app.routes import feed
 from app.config.settings import settings
 from app.database.base import Base
 from app.database.connection import engine
+from fastapi.staticfiles import StaticFiles
+import os
 from app.routes import health, videos, progress, chat, auth, user, admin_lesson, admin
 from app.routes.lesson import router as lesson_router
-from app.routes import lesson, admin_lesson
-from fastapi.staticfiles import StaticFiles
-from app.routes import admin
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -23,6 +25,7 @@ app = FastAPI(
     version="1.0.0.mvp",
     lifespan=lifespan
 )
+os.makedirs("uploads/feed", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 @app.on_event("startup")
@@ -33,20 +36,24 @@ async def inspect_active_routes():
             print(f"   -> URL: {route.path} | Methods: {route.methods} | Controller: {route.name}")
     print("🕵️ END OF ROUTE REPORT\n")
 
+# ✅ FIX 1 & 2: Added missing commas and explicit whitelist
 origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173", 
-    "http://localhost:5174",  # Just in case Vite bumped your port!
+    "http://localhost:5174",
     "http://127.0.0.1:5174",
     "http://localhost:3000",
     "https://hyggee.ir",
-    "https://app.hyggee.ir"
+    "https://www.hyggee.ir",
+    "https://app.hyggee.ir",
+    "https://upload.hyggee.ir"
 ]
 
+# ✅ FIX 3 & 4: Bound the origins list and enabled credentials for JWT tokens
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],       
-    allow_credentials=False,   
+    allow_origins=origins,       
+    allow_credentials=True,   
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -55,16 +62,13 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(user.router)
-app.include_router(chat.router, prefix="/api/v1/ws/chat")
 app.include_router(videos.router, prefix="/api/v1", tags=["Videos"])
 app.include_router(progress.router, prefix="/api/v1", tags=["Progress"])
 app.include_router(lesson_router, prefix="/api/v1")
 app.include_router(admin_lesson.router, prefix="/api/v1")
 app.include_router(admin.router, prefix="/api/v1")
-
-
-# The Chat Router (Matches your React frontend exactly)
 app.include_router(chat.router, prefix="/api/v1/ws/chat", tags=["Chat"])
+app.include_router(feed.router, prefix="/api/v1")
 
 if __name__ == "__main__":
     import uvicorn
