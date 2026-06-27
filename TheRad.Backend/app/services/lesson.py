@@ -1,9 +1,8 @@
 import re
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from app.models.lesson import Lesson
-from app.schemas.lesson import LessonSubmissionRequest, LessonGradeResponse, QuestionResult
 
 class LessonEngine:
     
@@ -26,7 +25,8 @@ class LessonEngine:
                 "quizzes": lesson.lesson_quiz_data or [],
                 "formFields": lesson.sentence_factory_data or [],
                 "tests": lesson.final_test_data or [],
-                "prepTasks": [] 
+                # 👇 Fixed to fetch from DB instead of returning empty array
+                "prepTasks": lesson.preparation_task or [] 
             })
         return formatted_lessons
 
@@ -36,72 +36,96 @@ class LessonEngine:
         Queries the database to find a complete lesson matching the sequence order number.
         Throws a 404 error if it doesn't exist.
         """
-        # 1. Build the database query to find the lesson by its order layout
         query = select(Lesson).where(Lesson.order_number == order_number)
         result = await db.execute(query)
         lesson = result.scalar_one_or_none()
         
-        # 2. Safety Check: If the database returned nothing, halt and report 404
         if not lesson:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND if 'status' in globals() else 404,
                 detail=f"Lesson with sequence order {order_number} could not be found."
             )
+        return lesson
 
     @staticmethod
-    async def grade_submission(db: AsyncSession, lesson_id: int, submission: LessonSubmissionRequest) -> LessonGradeResponse:
-        stmt = select(Lesson).where(Lesson.id == lesson_id)
-        result = await db.execute(stmt)
-        lesson = result.scalar_one_or_none()
+    async def validate_prep_tasks(db: AsyncSession, lesson_id: int, user_answers: dict):
+        """Grades preparation tasks. Fails instantly if ANY answer is wrong."""
+        lesson = await db.get(Lesson, lesson_id)
+        if not lesson or not lesson.preparation_task:
+            raise HTTPException(status_code=404, detail="Lesson or tasks not found")
 
+        wrong_answers = []
+        
+        # Iterate through the JSON array saved in the database
+        for task in lesson.preparation_task:
+            question_text = task.get("question")
+            
+            # Find the exact option where isCorrect == True
+            correct_option = next(
+                (opt["text"] for opt in task.get("options", []) if opt.get("isCorrect")), 
+                None
+            )
+
+            # Compare against the user's submitted dictionary
+            user_ans = user_answers.get(question_text)
+
+            if user_ans != correct_option:
+                wrong_answers.append({
+                    "question": question_text,
+                    "your_answer": str(user_ans) if user_ans else "None",
+                    "explanation": task.get("explanation", "Incorrect. Please review the lesson introduction.")
+                })
+
+        # If there are any mistakes, they fail the prep task barrier
+        if wrong_answers:
+            return {"passed": False, "errors": wrong_answers}
+            
+        return {"passed": True}
+
+
+    @staticmethod
+    async def grade_exam(db: AsyncSession, lesson_id: int, user_answers: dict, exam_type: str = "quiz"):
+        """Grades quizzes and tests. Requires 80% to pass and returns a hint guide if failed."""
+        lesson = await db.get(Lesson, lesson_id)
         if not lesson:
-            raise HTTPException(status_code=404, detail="Lesson not found.")
+            raise HTTPException(status_code=404, detail="Lesson not found")
 
-        all_questions = []
-        if lesson.lesson_quiz_data: all_questions.extend(lesson.lesson_quiz_data)
-        if lesson.sentence_factory_data: all_questions.extend(lesson.sentence_factory_data)
-        if lesson.final_test_data: all_questions.extend(lesson.final_test_data)
+        # Determine if we are grading the mid-lesson quiz or the final test
+        exam_data = lesson.lesson_quiz_data if exam_type == "quiz" else lesson.final_test_data
+        
+        if not exam_data:
+            return {"passed": True, "score": 100}
 
-        total_questions = len(all_questions)
+        total_questions = len(exam_data)
         correct_count = 0
-        results = []
+        wrong_answers = []
 
-        for sub in submission.answers:
-            if sub.question_id >= len(all_questions): continue
+        for q in exam_data:
+            question_text = q.get("question")
+            correct_option = next(
+                (opt["text"] for opt in q.get("options", []) if opt.get("isCorrect")), 
+                None
+            )
 
-            question = all_questions[sub.question_id]
-            # --- FIX: Force lowercase to match frontend ---
-            q_type = str(question.get("type", "multiple_choice")).lower()
-            is_correct = False
-            feedback = "Incorrect"
-            
-            # --- DEBUGGING: Print this to your terminal ---
-            print(f"DEBUG: Type={q_type}, UserAnswer={sub.answer}")
+            user_ans = user_answers.get(question_text)
 
-            if q_type == "multiple_choice":
-                selected_idx = int(sub.answer) if str(sub.answer).isdigit() else -1
-                options = question.get("options", [])
-                correct_idx = next((i for i, opt in enumerate(options) if opt.get("isCorrect")), -1)
-                
-                is_correct = (selected_idx == correct_idx)
-                feedback = "Correct!" if is_correct else "That wasn't the right choice."
-
-            elif q_type == "short_answer":
-                correct_ans = str(question.get("answer", "")).strip().lower()
-                user_ans = str(sub.answer).strip().lower()
-                is_correct = (user_ans == correct_ans)
-                feedback = "Great job!" if is_correct else f"Incorrect. Answer was {correct_ans}."
-
-            # Add other types here as needed...
-            
-            if is_correct:
+            if user_ans == correct_option:
                 correct_count += 1
-            
-            results.append(QuestionResult(question_id=sub.question_id, is_correct=is_correct, feedback=feedback))
+            else:
+                wrong_answers.append({
+                    "question": question_text,
+                    "explanation": q.get("explanation", "Review the material for this topic.")
+                })
 
-        return LessonGradeResponse(
-            lesson_id=lesson_id,
-            score_percentage=(correct_count / total_questions) * 100 if total_questions > 0 else 0,
-            passed=(correct_count / total_questions) * 100 >= 50.0,
-            results=results
-        )
+        # Calculate Score
+        score = (correct_count / total_questions) * 100 if total_questions > 0 else 100
+
+        # Pass/Fail Threshold (80%)
+        if score < 80:
+            return {
+                "passed": False,
+                "score": round(score, 2),
+                "hints": wrong_answers # 👈 This is your Hint Guide Sheet!
+            }
+
+        return {"passed": True, "score": round(score, 2)}
